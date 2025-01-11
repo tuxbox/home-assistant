@@ -72,10 +72,12 @@ def setup_platform(
     entities = client.get_entities()
     _LOGGER.info("Loaded entities")
     _LOGGER.info(len(entities))
-    # controme_sensors = [
-    #    entity for entity in entities if isinstance(entity, ContromeSensor)
-    # ]
-    # add_entities([ExampleSensor()])
+    controme_sensors = [
+        ReturnFlowSensor(entity, client)
+        for entity in entities
+        if isinstance(entity, ContromeSensor)
+    ]
+    add_entities(controme_sensors)
 
 
 class ReturnFlowSensor(SensorEntity):
