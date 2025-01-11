@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from logging import getLogger
 
+from const import CONF_HOME_ID, DOMAIN
+from controme_client import ContromeClient
 import voluptuous as vol
 
 from homeassistant.components.sensor import PLATFORM_SCHEMA as SENSOR_PLATFORM_SCHEMA
@@ -11,9 +13,6 @@ from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PORT, CONF_USERNA
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-
-from .const import CONF_HOME_ID, DOMAIN
-from .controme import ContromeClient
 
 _LOGGER = getLogger(__name__)
 
