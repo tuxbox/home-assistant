@@ -4,13 +4,28 @@ from __future__ import annotations
 
 from logging import getLogger
 
+import voluptuous as vol
+
+from homeassistant.components.sensor import PLATFORM_SCHEMA as SENSOR_PLATFORM_SCHEMA
+from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PORT, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
-from .const import DOMAIN
+from .const import CONF_HOME_ID, DOMAIN
+from .controme import ContromeClient
 
 _LOGGER = getLogger(__name__)
+
+PLATFORM_SCHEMA = SENSOR_PLATFORM_SCHEMA.extend(
+    {
+        vol.Required(CONF_HOST): str,
+        vol.Optional(CONF_PORT, default=80): int,
+        vol.Required(CONF_USERNAME): str,
+        vol.Required(CONF_PASSWORD): str,
+        vol.Required(CONF_HOME_ID): str,
+    }
+)
 
 
 # async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -40,6 +55,15 @@ def setup_platform(
     """Set up the sensor platform."""
     _LOGGER.info("Setting up Controme sensor platform")
     hass.data.setdefault(DOMAIN, {})
+    host = config[CONF_HOST]
+    port = config[CONF_PORT]
+    username = config[CONF_USERNAME]
+    password = config[CONF_PASSWORD]
+    home_id = config[CONF_HOME_ID]
+    client = ContromeClient(host, port, username, password, home_id)
+    entities = client.get_all_entities()
+    _LOGGER.info("Loaded entities")
+    _LOGGER.info(len(entities))
     # add_entities([ExampleSensor()])
 
 
