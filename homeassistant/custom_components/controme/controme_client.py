@@ -21,9 +21,65 @@ class ContromeEntity:
         self._room = room
         self._last_updated: str | None = None
 
-    def set_last_updated(self, last_updated: str) -> None:
-        """Set the last updated time."""
-        self._last_updated = last_updated
+    @property
+    def id(self) -> str:
+        """Get the id of the entity."""
+        return self._id
+
+    @id.setter
+    def id(self, value: str) -> None:
+        """Set the id of the entity."""
+        self._id = value
+
+    @property
+    def name(self) -> str:
+        """Get the name of the entity."""
+        return self._name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        """Set the id of the entity."""
+        self._name = value
+
+    @property
+    def floor(self) -> str:
+        """Get the floor of the entity."""
+        return self._floor
+
+    @floor.setter
+    def floor(self, value: str) -> None:
+        """Set the id of the entity."""
+        self._floor = value
+
+    @property
+    def room(self) -> str:
+        """Get the room of the entity."""
+        return self._room
+
+    @room.setter
+    def room(self, value: str) -> None:
+        """Set the id of the entity."""
+        self._room = value
+
+    @property
+    def state(self) -> float:
+        """Get the state of the entity."""
+        return self._state
+
+    @state.setter
+    def state(self, value: float) -> None:
+        """Set the id of the entity."""
+        self._state = value
+
+    @property
+    def last_updated(self) -> str | None:
+        """Get the last updated time of the entity."""
+        return self._last_updated
+
+    @last_updated.setter
+    def last_updated(self, value: str) -> None:
+        """Set the id of the entity."""
+        self._last_updated = value
 
     def format_value(self, value: float) -> str:
         """Format a value to conform with the Controme API limitations."""
@@ -63,13 +119,15 @@ class ContromeSensor(ContromeEntity):
         super().__init__(id, name, floor, room)
         self._state = 0.0
 
-    def get_state(self) -> float:
+    @property
+    def state(self) -> float:
         """Get the state of the entity."""
         return self._state
 
-    def set_state(self, state: float) -> None:
+    @state.setter
+    def state(self, value: float) -> None:
         """Set the state of the entity."""
-        self._state = state
+        self._state = value
 
     def get_formatted_state(self) -> str:
         """Get the formatted state of the entity."""
@@ -85,13 +143,15 @@ class ContromeThermostat(ContromeSensor):
         self._state = 0.0
         self._target_state = 0.0
 
-    def get_target_state(self) -> float:
+    @property
+    def target_state(self) -> float:
         """Get the target state of the thermostat."""
         return self._target_state
 
-    def set_target_state(self, target_state: float) -> None:
+    @target_state.setter
+    def target_state(self, value: float) -> None:
         """Set the target state of the thermostat."""
-        self._target_state = target_state
+        self._target_state = value
 
     def get_formatted_target_state(self) -> str:
         """Get the formatted target state of the thermostat."""
@@ -111,10 +171,14 @@ class ContromeClient:
         self._password = password
         self._home_id = home_id
 
-    def get_all_entities(self) -> list[ContromeEntity]:
+    def get_entities(self, room_id: str = "") -> list[ContromeEntity]:
         """Get all entities."""
+        suffix = ""
+        if room_id != "":
+            suffix = f"{room_id}/"
         response = requests.get(
-            f"http://{self._host}/get/json/v1/{self._home_id}/temps/", timeout=10
+            f"http://{self._host}/get/json/v1/{self._home_id}/temps/{suffix}",
+            timeout=10,
         )
         if response.status_code == 200:
             data = response.json()
@@ -125,15 +189,13 @@ class ContromeClient:
                     thermostat = ContromeThermostat(
                         id=raum["id"], name=raum["name"], floor=floor, room=raum["name"]
                     )
-                    thermostat.set_target_state(raum["solltemperatur"])
+                    thermostat.target_state = raum["solltemperatur"]
                     # just to work around a codespell error
-                    thermostat.set_state(
-                        raum[
-                            API_RESPONSE_FIELD_TEMPERATURE[
-                                0 : len(API_RESPONSE_FIELD_TEMPERATURE) - 1
-                            ]
+                    thermostat.state = raum[
+                        API_RESPONSE_FIELD_TEMPERATURE[
+                            0 : len(API_RESPONSE_FIELD_TEMPERATURE) - 1
                         ]
-                    )
+                    ]
                     for sensor in raum["sensoren"]:
                         if sensor["raumtemperatursensor"]:
                             cs = ContromeSensor(
@@ -142,9 +204,9 @@ class ContromeClient:
                                 floor=floor,
                                 room=raum["name"],
                             )
-                            cs.set_state(sensor["wert"])
+                            cs.state = sensor["wert"]
                             cs = sensor["letzte_uebertragung"]
-                            thermostat.set_last_updated(sensor["letzte_uebertragung"])
+                            thermostat.last_updated = sensor["letzte_uebertragung"]
                             entities.append(cs)
                         else:
                             s = ContromeSensor(
@@ -153,8 +215,8 @@ class ContromeClient:
                                 floor=floor,
                                 room=raum["name"],
                             )
-                            s.set_state(sensor["wert"])
-                            s.set_last_updated(sensor["letzte_uebertragung"])
+                            s.state = sensor["wert"]
+                            s.last_updated = sensor["letzte_uebertragung"]
                             entities.append(s)
 
                     entities.append(thermostat)
