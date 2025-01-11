@@ -20,7 +20,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .const import CONF_HOME_ID, DOMAIN
-from .controme_client import ContromeClient, ContromeSensor
+from .controme_client import ContromeClient, ContromeSensor, ContromeThermostat
 
 _LOGGER = getLogger(__name__)
 MIN_TIME_BETWEEN_UPDATES = timedelta(minutes=1)
@@ -76,6 +76,7 @@ def setup_platform(
         ReturnFlowSensor(entity, client)
         for entity in entities
         if isinstance(entity, ContromeSensor)
+        and not isinstance(entity, ContromeThermostat)
     ]
     add_entities(controme_sensors)
 
