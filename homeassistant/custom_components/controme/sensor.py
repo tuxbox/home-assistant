@@ -4,44 +4,45 @@ from __future__ import annotations
 
 from logging import getLogger
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .const import DOMAIN
 
 _LOGGER = getLogger(__name__)
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up homeassistant-controme from a config entry."""
-
-    _LOGGER.info("Setting up controme integration")
-    # client = await hass.async_add_executor_job(create_and_update_instance, entry)
-
-    # entry.async_on_unload(entry.add_update_listener(update_listener))
-
-    hass.data.setdefault(DOMAIN, {})
-
-    _LOGGER.info(entry.data)
-    # hass.data[DOMAIN][entry.entry_id] = client
-
-    # await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    return True
-
-
-# def setup_platform(
-#    hass: HomeAssistant,
-#    config: ConfigType,
-#    add_entities: AddEntitiesCallback,
-#    discovery_info: DiscoveryInfoType | None = None,
-# ) -> None:
-#    """Set up the sensor platform."""
-#    _LOGGER.info("Setting up Controme sensor platform")
+# async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+#    """Set up homeassistant-controme from a config entry."""
+#
+#    _LOGGER.info("Setting up controme integration")
+#    # client = await hass.async_add_executor_job(create_and_update_instance, entry)
+#
+#    # entry.async_on_unload(entry.add_update_listener(update_listener))
+#
 #    hass.data.setdefault(DOMAIN, {})
-#    add_entities([ExampleSensor()])
 #
+#    _LOGGER.info(entry.data)
+#    # hass.data[DOMAIN][entry.entry_id] = client
 #
+#    # await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+#
+#    return True
+
+
+def setup_platform(
+    hass: HomeAssistant,
+    config: ConfigType,
+    add_entities: AddEntitiesCallback,
+    discovery_info: DiscoveryInfoType | None = None,
+) -> None:
+    """Set up the sensor platform."""
+    _LOGGER.info("Setting up Controme sensor platform")
+    hass.data.setdefault(DOMAIN, {})
+    # add_entities([ExampleSensor()])
+
+
 # class ExampleSensor(SensorEntity):
 #    """Representation of a Sensor."""
 #
