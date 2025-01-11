@@ -113,6 +113,7 @@ class ReturnFlowSensor(SensorEntity):
             "room": sensor.room,
             "last_updated": sensor.last_updated,
         }
+        self._attr_native_value = sensor.state
 
     def update(self) -> None:
         """Fetch new state data for the sensor.
