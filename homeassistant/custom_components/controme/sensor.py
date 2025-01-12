@@ -17,6 +17,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PORT, CONF_USERNAME
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -72,7 +73,15 @@ async def async_setup_platform(
     password = config[CONF_PASSWORD]
     home_id = config[CONF_HOME_ID]
 
-    client = ContromeClient(host, port, username, password, home_id)
+    session = async_create_clientsession(hass)
+    client = ContromeClient(
+        session=session,
+        host=host,
+        port=port,
+        username=username,
+        password=password,
+        home_id=home_id,
+    )
     coordinator = ContromeCoordinator(hass, client)
     await coordinator.async_config_entry_first_refresh()
 
