@@ -51,6 +51,23 @@ class ContromeCoordinator(DataUpdateCoordinator):
         self._entities: list[ContromeEntity] = []
         self._entity_type = type
 
+    async def _get_filtered_entities(self) -> list[ContromeEntity]:
+        """Get the entities of the requested type."""
+        entities = await self._client.get_entities()
+        self._entities = [
+            entity
+            for entity in entities
+            if (
+                isinstance(entity, ContromeThermostat)
+                and self._entity_type == ContromeEntityType.THERMOSTAT
+            )
+            or (
+                isinstance(entity, ContromeSensor)
+                and self._entity_type == ContromeEntityType.SENSOR
+            )
+        ]
+        return self._entities
+
     async def _async_setup(self) -> None:
         """Set up the coordinator.
 
@@ -61,47 +78,13 @@ class ContromeCoordinator(DataUpdateCoordinator):
         coordinator.async_config_entry_first_refresh.
         """
         _LOGGER.info("Async initial setup of the coordinator")
-        self._entities = [
-            entity
-            for entity in await self._client.get_entities()
-            if (
-                isinstance(entity, ContromeThermostat)
-                and self._entity_type == ContromeEntityType.THERMOSTAT
-            )
-            or (
-                isinstance(entity, ContromeSensor)
-                and self._entity_type == ContromeEntityType.SENSOR
-            )
-        ]
+        await self._get_filtered_entities()
 
-    async def _async_update_data(self) -> dict[str, ContromeSensor]:
+    async def _async_update_data(self) -> dict[str, ContromeEntity]:
         """Fetch the latest data from the controme api."""
         _LOGGER.info("Call to update data")
-        self._entities = await self._client.get_entities()
+        entities = await self._get_filtered_entities()
         result = {}
-        for entity in self._entities:
-            if (
-                isinstance(entity, ContromeThermostat)
-                and self._entity_type == ContromeEntityType.THERMOSTAT
-            ) or (
-                isinstance(entity, ContromeSensor)
-                and self._entity_type == ContromeEntityType.SENSOR
-            ):
-                result[entity.id] = entity
-            elif (
-                isinstance(entity, ContromeThermostat)
-                and self._entity_type == ContromeEntityType.SENSOR
-            ):
-                _LOGGER.error(
-                    "Coordinator is set up for sensors, but got a thermostat entity"
-                )
-            elif (
-                isinstance(entity, ContromeSensor)
-                and self._entity_type == ContromeEntityType.THERMOSTAT
-            ):
-                _LOGGER.error(
-                    "Coordinator is set up for thermostats, but got a sensor entity"
-                )
-            else:
-                _LOGGER.error("Unknown entity type: %s", self._entity_type)
+        for entity in entities:
+            result[entity.id] = entity
         return result
