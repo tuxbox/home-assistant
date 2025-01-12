@@ -44,10 +44,11 @@ class ContromeCoordinator(DataUpdateCoordinator):
         _LOGGER.info("Async initial setup of the coordinator")
         self._entities = await self._client.get_entities()
 
-    async def _async_update_data(self) -> dict[str, list[ContromeEntity]]:
+    async def _async_update_data(self) -> dict[str, ContromeEntity]:
         """Fetch the latest data from the controme api."""
         _LOGGER.info("Call to update data")
         self._entities = await self._client.get_entities()
         result = {}
-        result["controme"] = self._entities
+        for entity in self._entities:
+            result[entity.id] = entity
         return result

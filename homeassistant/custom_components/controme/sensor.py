@@ -84,6 +84,8 @@ async def async_setup_platform(
     )
     coordinator = ContromeCoordinator(hass, client)
     await coordinator.async_config_entry_first_refresh()
+    data = coordinator.data
+    _LOGGER.debug(data)
 
 
 class ReturnFlowSensor(CoordinatorEntity, SensorEntity):
