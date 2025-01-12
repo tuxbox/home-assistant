@@ -27,7 +27,7 @@ from .controme_client import ContromeClient, ContromeSensor
 from .controme_coordinator import ContromeCoordinator
 
 _LOGGER = getLogger(__name__)
-MIN_TIME_BETWEEN_UPDATES = timedelta(minutes=1)
+SCAN_INTERVAL = timedelta(minutes=15)
 
 PLATFORM_SCHEMA = SENSOR_PLATFORM_SCHEMA.extend(
     {
@@ -38,24 +38,6 @@ PLATFORM_SCHEMA = SENSOR_PLATFORM_SCHEMA.extend(
         vol.Required(CONF_HOME_ID): str,
     }
 )
-
-
-# async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-#    """Set up homeassistant-controme from a config entry."""
-#
-#    _LOGGER.info("Setting up controme integration")
-#    # client = await hass.async_add_executor_job(create_and_update_instance, entry)
-#
-#    # entry.async_on_unload(entry.add_update_listener(update_listener))
-#
-#    hass.data.setdefault(DOMAIN, {})
-#
-#    _LOGGER.info(entry.data)
-#    # hass.data[DOMAIN][entry.entry_id] = client
-#
-#    # await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-#
-#    return True
 
 
 async def async_setup_platform(
