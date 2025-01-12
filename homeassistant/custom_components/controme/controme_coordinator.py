@@ -3,10 +3,10 @@
 from datetime import timedelta
 from logging import getLogger
 
-from controme_client import ContromeClient, ContromeSensor
-
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
+from .controme_client import ContromeClient, ContromeEntity
 
 _LOGGER = getLogger(__name__)
 
@@ -30,7 +30,7 @@ class ContromeCoordinator(DataUpdateCoordinator):
         )
         _LOGGER.info("Setting up controme coordinator")
         self._client = client
-        self._entities: list[ContromeSensor] = []
+        self._entities: list[ContromeEntity] = []
 
     async def _async_setup(self) -> None:
         """Set up the coordinator.
@@ -44,7 +44,7 @@ class ContromeCoordinator(DataUpdateCoordinator):
         _LOGGER.info("Async initial setup of the coordinator")
         self._entities = self._client.get_entities()
 
-    async def _async_update_data(self) -> dict[str, ContromeSensor]:
+    async def _async_update_data(self) -> dict[str, list[ContromeEntity]]:
         """Fetch the latest data from the controme api."""
         _LOGGER.info("Call to update data")
         self._entities = self._client.get_entities()
