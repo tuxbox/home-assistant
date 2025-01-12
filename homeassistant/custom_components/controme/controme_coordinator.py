@@ -69,14 +69,27 @@ class ContromeCoordinator(DataUpdateCoordinator):
         self._entities = await self._client.get_entities()
         result = {}
         for entity in self._entities:
-            if isinstance(entity, ContromeSensor):
-                if (
-                    isinstance(entity, ContromeThermostat)
-                    and self._entity_type == ContromeEntityType.THERMOSTAT
-                    or isinstance(entity, ContromeSensor)
-                    and self._entity_type == ContromeEntityType.SENSOR
-                ):
-                    result[entity.id] = entity
-                else:
-                    _LOGGER.error("Unknown entity type: %s", self._entity_type)
+            if (
+                isinstance(entity, ContromeThermostat)
+                and self._entity_type == ContromeEntityType.THERMOSTAT
+                or isinstance(entity, ContromeSensor)
+                and self._entity_type == ContromeEntityType.SENSOR
+            ):
+                result[entity.id] = entity
+            elif (
+                isinstance(entity, ContromeThermostat)
+                and self._entity_type == ContromeEntityType.SENSOR
+            ):
+                _LOGGER.error(
+                    "Coordinator is set up for sensors, but got a thermostat entity"
+                )
+            elif (
+                isinstance(entity, ContromeSensor)
+                and self._entity_type == ContromeEntityType.THERMOSTAT
+            ):
+                _LOGGER.error(
+                    "Coordinator is set up for thermostats, but got a sensor entity"
+                )
+            else:
+                _LOGGER.error("Unknown entity type: %s", self._entity_type)
         return result

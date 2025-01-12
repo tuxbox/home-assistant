@@ -102,6 +102,7 @@ class Thermostat(CoordinatorEntity, ClimateEntity):
         }
         self._attr_native_value = thermostat.state
         self._attr_target_temperature = thermostat.target_state
+        self._attr_hvac_mode = HVACMode.HEAT
         self._attr_hvac_modes = [HVACMode.HEAT]
         self._attr_current_temperature = thermostat.state
         self._attr_max_temp = 30
