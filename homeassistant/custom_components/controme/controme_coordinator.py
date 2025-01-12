@@ -83,7 +83,8 @@ class ContromeCoordinator(DataUpdateCoordinator):
             if (
                 isinstance(entity, ContromeThermostat)
                 and self._entity_type == ContromeEntityType.THERMOSTAT
-                or isinstance(entity, ContromeSensor)
+            ) or (
+                isinstance(entity, ContromeSensor)
                 and self._entity_type == ContromeEntityType.SENSOR
             ):
                 result[entity.id] = entity
