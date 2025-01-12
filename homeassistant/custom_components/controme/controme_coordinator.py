@@ -6,7 +6,12 @@ from logging import getLogger
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .controme_client import ContromeClient, ContromeEntity
+from .controme_client import (
+    ContromeClient,
+    ContromeEntity,
+    ContromeSensor,
+    ContromeThermostat,
+)
 
 _LOGGER = getLogger(__name__)
 
@@ -44,11 +49,15 @@ class ContromeCoordinator(DataUpdateCoordinator):
         _LOGGER.info("Async initial setup of the coordinator")
         self._entities = await self._client.get_entities()
 
-    async def _async_update_data(self) -> dict[str, ContromeEntity]:
+    async def _async_update_data(self) -> dict[str, ContromeSensor]:
         """Fetch the latest data from the controme api."""
         _LOGGER.info("Call to update data")
         self._entities = await self._client.get_entities()
         result = {}
         for entity in self._entities:
-            result[entity.id] = entity
+            if isinstance(entity, ContromeSensor):
+                if not isinstance(entity, ContromeThermostat):
+                    result[entity.id] = entity
+                else:
+                    _LOGGER.debug("Skipping thermostat entity")
         return result

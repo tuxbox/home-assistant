@@ -84,8 +84,9 @@ async def async_setup_platform(
     )
     coordinator = ContromeCoordinator(hass, client)
     await coordinator.async_config_entry_first_refresh()
-    data = coordinator.data
-    _LOGGER.debug(data)
+    add_entities(
+        [ReturnFlowSensor(coordinator, sensor) for sensor in coordinator.data.values()]
+    )
 
 
 class ReturnFlowSensor(CoordinatorEntity, SensorEntity):
@@ -116,26 +117,12 @@ class ReturnFlowSensor(CoordinatorEntity, SensorEntity):
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
         entities: dict[str, Any] = self.coordinator.data
-
-        # state = next(
-        #    (entity.state for entity in entities if entity.id == self._sensor.id),
-        #    None,
-        # )
-        # last_updated = next(
-        #    (
-        #        entity.last_updated
-        #        for entity in entities
-        #        if entity.id == self._sensor.id
-        #    ),
-        #    None,
-        # )
-        # _LOGGER.info(state)
-        # _LOGGER.info(last_updated)
-        # self._attr_native_value = 0.0 if state is None else state
-        # self._attr_extra_state_attributes["last_updated"] = (
-        #    "n/a" if last_updated is None else last_updated
-        # )
-        _LOGGER.info(entities)
+        data = entities.get(self._sensor.id, None)
+        if data is None:
+            _LOGGER.error("No data found for sensor %s", self._sensor.id)
+        else:
+            self._attr_native_value = data.state
+            self._attr_extra_state_attributes["last_updated"] = data.last_updated
         self.async_write_ha_state()
 
     # def update(self) -> None:
