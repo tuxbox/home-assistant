@@ -11,6 +11,7 @@ import voluptuous as vol
 from homeassistant.components.climate import (
     PLATFORM_SCHEMA as CLIMATE_PLATFORM_SCHEMA,
     ClimateEntity,
+    ClimateEntityFeature,
     HVACMode,
     UnitOfTemperature,
 )
@@ -112,6 +113,7 @@ class Thermostat(CoordinatorEntity, ClimateEntity):
         self._attr_target_temperature_low = 10
         self._attr_temperature_unit = UnitOfTemperature.CELSIUS
         self._attr_target_temperature_step = 0.5
+        self._attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature."""
