@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 from logging import getLogger
+from typing import Any
 
 import voluptuous as vol
 
@@ -15,12 +16,14 @@ from homeassistant.components.sensor import (
     UnitOfTemperature,
 )
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PORT, CONF_USERNAME
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_HOME_ID, DOMAIN
-from .controme_client import ContromeClient, ContromeSensor, ContromeThermostat
+from .controme_client import ContromeClient, ContromeSensor
+from .controme_coordinator import ContromeCoordinator
 
 _LOGGER = getLogger(__name__)
 MIN_TIME_BETWEEN_UPDATES = timedelta(minutes=1)
@@ -54,34 +57,27 @@ PLATFORM_SCHEMA = SENSOR_PLATFORM_SCHEMA.extend(
 #    return True
 
 
-def setup_platform(
+async def async_setup_platform(
     hass: HomeAssistant,
     config: ConfigType,
     add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
     """Set up the sensor platform."""
-    _LOGGER.info("Setting up Controme sensor platform")
+    _LOGGER.info("Setting up Controme sensor platform (async)")
     hass.data.setdefault(DOMAIN, {})
     host = config[CONF_HOST]
     port = config[CONF_PORT]
     username = config[CONF_USERNAME]
     password = config[CONF_PASSWORD]
     home_id = config[CONF_HOME_ID]
+
     client = ContromeClient(host, port, username, password, home_id)
-    entities = client.get_entities()
-    _LOGGER.info("Loaded entities")
-    _LOGGER.info(len(entities))
-    controme_sensors = [
-        ReturnFlowSensor(entity, client)
-        for entity in entities
-        if isinstance(entity, ContromeSensor)
-        and not isinstance(entity, ContromeThermostat)
-    ]
-    add_entities(controme_sensors)
+    coordinator = ContromeCoordinator(hass, client)
+    await coordinator.async_config_entry_first_refresh()
 
 
-class ReturnFlowSensor(SensorEntity):
+class ReturnFlowSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Sensor."""
 
     _attr_name = "Return Flow Temperature"
@@ -89,24 +85,13 @@ class ReturnFlowSensor(SensorEntity):
     _attr_device_class = SensorDeviceClass.TEMPERATURE
     _attr_state_class = SensorStateClass.MEASUREMENT
 
-    def __init__(self, sensor: ContromeSensor, client: ContromeClient) -> None:
-        """Initialize the sensor entity.
-
-        Args:
-            sensor (ContromeSensor): The sensor object containing sensor details.
-            client (ContromeClient): The client object for interacting with the Controme API.
-
-        Attributes:
-            _sensor (ContromeSensor): Stores the sensor object.
-            _client (ContromeClient): Stores the client object.
-            _attr_name (str): The name attribute for the sensor entity.
-            _attr_unique_id (str): The unique ID attribute for the sensor entity.
-            _attr_extra_state_attributes (dict): Additional state attributes for the sensor entity, including floor, room, and last updated information.
-
-        """
-        super().__init__()
+    def __init__(
+        self, coordinator: ContromeCoordinator, sensor: ContromeSensor
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, context=sensor)
+        _LOGGER.info(sensor)
         self._sensor = sensor
-        self._client = client
         self._attr_name = f"Return Flow: {sensor.name}"
         self._attr_unique_id = f"{sensor.id}-return-flow"
         self._attr_extra_state_attributes = {
@@ -116,28 +101,42 @@ class ReturnFlowSensor(SensorEntity):
         }
         self._attr_native_value = sensor.state
 
-    def update(self) -> None:
-        """Fetch new state data for the sensor.
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        entities: dict[str, Any] = self.coordinator.data
 
-        This is the only method that should fetch new data for Home Assistant.
-        """
-        room_entities = self._client.get_entities(room_id=self._sensor.room)
-        state = next(
-            (entity.state for entity in room_entities if entity.id == self._sensor.id),
-            None,
-        )
-        last_updated = next(
-            (
-                entity.last_updated
-                for entity in room_entities
-                if entity.id == self._sensor.id
-            ),
-            None,
-        )
-        self._attr_native_value = 0.0 if state is None else state
-        self._attr_extra_state_attributes["last_updated"] = (
-            "n/a" if last_updated is None else last_updated
-        )
+        # state = next(
+        #    (entity.state for entity in entities if entity.id == self._sensor.id),
+        #    None,
+        # )
+        # last_updated = next(
+        #    (
+        #        entity.last_updated
+        #        for entity in entities
+        #        if entity.id == self._sensor.id
+        #    ),
+        #    None,
+        # )
+        # _LOGGER.info(state)
+        # _LOGGER.info(last_updated)
+        # self._attr_native_value = 0.0 if state is None else state
+        # self._attr_extra_state_attributes["last_updated"] = (
+        #    "n/a" if last_updated is None else last_updated
+        # )
+        _LOGGER.info(entities)
+        self.async_write_ha_state()
+
+    # def update(self) -> None:
+    #    """Fetch new state data for the sensor.
+    #    This is the only method that should fetch new data for Home Assistant.
+    #    """
+    #    room_entities = self._client.get_entities(room_id=self._sensor.room)
+    #
+    #    self._attr_native_value = 0.0 if state is None else state
+    #    self._attr_extra_state_attributes["last_updated"] = (
+    #        "n/a" if last_updated is None else last_updated
+    #    )
 
 
 # class ExampleSensor(SensorEntity):
