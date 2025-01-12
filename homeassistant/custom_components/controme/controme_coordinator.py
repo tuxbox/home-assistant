@@ -1,6 +1,7 @@
 """the data update coordinator for the controme api."""
 
 from datetime import timedelta
+from enum import Enum
 from logging import getLogger
 
 from homeassistant.core import HomeAssistant
@@ -16,10 +17,22 @@ from .controme_client import (
 _LOGGER = getLogger(__name__)
 
 
+class ContromeEntityType(Enum):
+    """The type of entity to fetch from the controme api."""
+
+    SENSOR = "sensor"
+    THERMOSTAT = "thermostat"
+
+
 class ContromeCoordinator(DataUpdateCoordinator):
     """The data update coordinator for the controme api."""
 
-    def __init__(self, hass: HomeAssistant, client: ContromeClient) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        client: ContromeClient,
+        type: ContromeEntityType = ContromeEntityType.SENSOR,
+    ) -> None:
         """Initialize my coordinator."""
         super().__init__(
             hass,
@@ -36,6 +49,7 @@ class ContromeCoordinator(DataUpdateCoordinator):
         _LOGGER.info("Setting up controme coordinator")
         self._client = client
         self._entities: list[ContromeEntity] = []
+        self._entity_type = type
 
     async def _async_setup(self) -> None:
         """Set up the coordinator.
@@ -56,8 +70,13 @@ class ContromeCoordinator(DataUpdateCoordinator):
         result = {}
         for entity in self._entities:
             if isinstance(entity, ContromeSensor):
-                if not isinstance(entity, ContromeThermostat):
+                if (
+                    isinstance(entity, ContromeThermostat)
+                    and self._entity_type == ContromeEntityType.THERMOSTAT
+                    or isinstance(entity, ContromeSensor)
+                    and self._entity_type == ContromeEntityType.SENSOR
+                ):
                     result[entity.id] = entity
                 else:
-                    _LOGGER.debug("Skipping thermostat entity")
+                    _LOGGER.error("Unknown entity type: %s", self._entity_type)
         return result
