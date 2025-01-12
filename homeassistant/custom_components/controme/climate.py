@@ -67,7 +67,7 @@ async def async_setup_platform(
     await coordinator.async_config_entry_first_refresh()
     add_entities(
         [
-            Thermostat(coordinator, thermostat)
+            Thermostat(coordinator, client, thermostat)
             for thermostat in coordinator.data.values()
         ]
     )
@@ -82,12 +82,16 @@ class Thermostat(CoordinatorEntity, ClimateEntity):
     # _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(
-        self, coordinator: ContromeCoordinator, thermostat: ContromeThermostat
+        self,
+        coordinator: ContromeCoordinator,
+        client: ContromeClient,
+        thermostat: ContromeThermostat,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator, context=thermostat)
         _LOGGER.info(thermostat)
         self._thermostat = thermostat
+        self._client = client
         self._attr_name = f"{thermostat.name}"
         self._attr_unique_id = f"{thermostat.id}-thermostat"
         self._attr_extra_state_attributes = {
@@ -105,6 +109,14 @@ class Thermostat(CoordinatorEntity, ClimateEntity):
         self._attr_target_temperature_low = 10
         self._attr_temperature_unit = UnitOfTemperature.CELSIUS
         self._attr_target_temperature_step = 0.5
+
+    async def async_set_temperature(self, **kwargs: Any) -> None:
+        """Set new target temperature."""
+        temperature = kwargs.get("temperature")
+        if temperature is None:
+            return
+        await self._client.update_target_state(self._thermostat, float(temperature))
+        await self.coordinator.async_request_refresh()
 
     @callback
     def _handle_coordinator_update(self) -> None:

@@ -235,7 +235,31 @@ class ContromeClient:
         """Update the state of a sensor."""
         # value = sensor.get_formatted_state()
 
-    async def update_target_state(self, thermostat: ContromeThermostat) -> None:
+    async def update_target_state(
+        self, thermostat: ContromeThermostat, target_value: float
+    ) -> None:
         """Update the target state of a thermostat."""
-        # target_value = thermostat.get_formatted_target_state()
-        # print(target_value)
+        _LOGGER.debug("Updating target state for %s to %f", thermostat.id, target_value)
+        payload = {
+            "user": self._username,
+            "password": self._password,
+            "ziel": target_value,
+            "duration": 0,  # Example duration, adjust as needed
+        }
+        async with self._session.post(
+            f"http://{self._host}/set/json/v1/{self._home_id}/ziel/{thermostat.id}/",
+            data=payload,
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded; charset=utf-8"
+            },
+        ) as response:
+            if response.status == 200:
+                _LOGGER.info(
+                    "Successfully updated target state to %s for thermostat ID %s",
+                    thermostat.get_formatted_target_state(),
+                    thermostat.id,
+                )
+            else:
+                _LOGGER.error("Error updating target state")
+                _LOGGER.error(response.status)
+                _LOGGER.error(await response.text())
