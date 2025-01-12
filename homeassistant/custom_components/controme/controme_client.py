@@ -247,11 +247,14 @@ class ContromeClient:
         self, thermostat: ContromeThermostat, target_value: float
     ) -> None:
         """Update the target state of a thermostat."""
-        _LOGGER.debug("Updating target state for %s to %f", thermostat.id, target_value)
+        formatted_target_value = f"{target_value:.2f}"
+        _LOGGER.debug(
+            "Updating target state for %s to %s", thermostat.id, formatted_target_value
+        )
         payload = {
             "user": self._username,
             "password": self._password,
-            "ziel": target_value,
+            "ziel": formatted_target_value,
             "duration": 0,  # Example duration, adjust as needed
         }
         async with self._session.post(
