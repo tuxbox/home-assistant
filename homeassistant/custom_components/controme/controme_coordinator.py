@@ -42,12 +42,12 @@ class ContromeCoordinator(DataUpdateCoordinator):
         coordinator.async_config_entry_first_refresh.
         """
         _LOGGER.info("Async initial setup of the coordinator")
-        self._entities = self._client.get_entities()
+        self._entities = await self._client.get_entities()
 
     async def _async_update_data(self) -> dict[str, list[ContromeEntity]]:
         """Fetch the latest data from the controme api."""
         _LOGGER.info("Call to update data")
-        self._entities = self._client.get_entities()
+        self._entities = await self._client.get_entities()
         result = {}
         result["controme"] = self._entities
         return result

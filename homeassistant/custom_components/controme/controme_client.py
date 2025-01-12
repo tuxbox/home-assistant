@@ -2,7 +2,7 @@
 
 from logging import getLogger
 
-import requests
+from aiohttp import ClientSession
 
 from .const import API_RESPONSE_FIELD_TEMPERATURE
 
@@ -162,71 +162,80 @@ class ContromeClient:
     """Controme client."""
 
     def __init__(
-        self, host: str, port: int, username: str, password: str, home_id: int
+        self,
+        session: ClientSession,
+        host: str,
+        port: int,
+        username: str,
+        password: str,
+        home_id: int,
     ) -> None:
         """Initialize the client."""
+        self._session = session
         self._host = host
         self._port = port
         self._username = username
         self._password = password
         self._home_id = home_id
 
-    def get_entities(self, room_id: str = "") -> list[ContromeEntity]:
+    async def get_entities(self, room_id: str = "") -> list[ContromeEntity]:
         """Get all entities."""
         suffix = ""
         if room_id != "":
             suffix = f"{room_id}/"
-        response = requests.get(
-            f"http://{self._host}/get/json/v1/{self._home_id}/temps/{suffix}",
-            timeout=10,
-        )
-        if response.status_code == 200:
-            data = response.json()
-            entities: list[ContromeEntity] = []
-            for etage in data:
-                floor = etage["etagenname"]
-                for raum in etage["raeume"]:
-                    thermostat = ContromeThermostat(
-                        id=raum["id"], name=raum["name"], floor=floor, room=raum["name"]
-                    )
-                    thermostat.target_state = raum["solltemperatur"]
-                    # just to work around a codespell error
-                    thermostat.state = raum[
-                        API_RESPONSE_FIELD_TEMPERATURE[
-                            0 : len(API_RESPONSE_FIELD_TEMPERATURE) - 1
+        async with self._session.get(
+            f"http://{self._host}/get/json/v1/{self._home_id}/temps/{suffix}"
+        ) as response:
+            if response.status == 200:
+                data = await response.json()
+                entities: list[ContromeEntity] = []
+                for etage in data:
+                    floor = etage["etagenname"]
+                    for raum in etage["raeume"]:
+                        thermostat = ContromeThermostat(
+                            id=raum["id"],
+                            name=raum["name"],
+                            floor=floor,
+                            room=raum["name"],
+                        )
+                        thermostat.target_state = raum["solltemperatur"]
+                        # just to work around a codespell error
+                        thermostat.state = raum[
+                            API_RESPONSE_FIELD_TEMPERATURE[
+                                0 : len(API_RESPONSE_FIELD_TEMPERATURE) - 1
+                            ]
                         ]
-                    ]
-                    for sensor in raum["sensoren"]:
-                        if sensor["raumtemperatursensor"]:
-                            cs = ContromeSensor(
-                                id=sensor["name"],
-                                name=f"Isttemperatur {raum["name"]}",
-                                floor=floor,
-                                room=raum["name"],
-                            )
-                            cs.state = sensor["wert"]
-                            cs = sensor["letzte_uebertragung"]
-                            thermostat.last_updated = sensor["letzte_uebertragung"]
-                            entities.append(cs)
-                        else:
-                            s = ContromeSensor(
-                                id=sensor["name"],
-                                name=f'{sensor["beschreibung"]} {raum["name"]}',
-                                floor=floor,
-                                room=raum["name"],
-                            )
-                            s.state = sensor["wert"]
-                            s.last_updated = sensor["letzte_uebertragung"]
-                            entities.append(s)
+                        for sensor in raum["sensoren"]:
+                            if sensor["raumtemperatursensor"]:
+                                cs = ContromeSensor(
+                                    id=sensor["name"],
+                                    name=f"Isttemperatur {raum["name"]}",
+                                    floor=floor,
+                                    room=raum["name"],
+                                )
+                                cs.state = sensor["wert"]
+                                cs = sensor["letzte_uebertragung"]
+                                thermostat.last_updated = sensor["letzte_uebertragung"]
+                                entities.append(cs)
+                            else:
+                                s = ContromeSensor(
+                                    id=sensor["name"],
+                                    name=f'{sensor["beschreibung"]} {raum["name"]}',
+                                    floor=floor,
+                                    room=raum["name"],
+                                )
+                                s.state = sensor["wert"]
+                                s.last_updated = sensor["letzte_uebertragung"]
+                                entities.append(s)
 
-                    entities.append(thermostat)
+                        entities.append(thermostat)
         return entities
 
-    def update_state(self, sensor: ContromeSensor) -> None:
+    async def update_state(self, sensor: ContromeSensor) -> None:
         """Update the state of a sensor."""
         # value = sensor.get_formatted_state()
 
-    def update_target_state(self, thermostat: ContromeThermostat) -> None:
+    async def update_target_state(self, thermostat: ContromeThermostat) -> None:
         """Update the target state of a thermostat."""
         # target_value = thermostat.get_formatted_target_state()
         # print(target_value)
