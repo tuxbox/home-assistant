@@ -46,6 +46,7 @@ async def async_setup_platform(
     discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
     """Set up the sensor platform."""
+    _LOGGER.debug("CONTROME---Setting up Controme climate platform (async)")
     _LOGGER.info("Setting up Controme climate platform (async)")
     hass.data.setdefault(DOMAIN, {})
     host = config[CONF_HOST]
