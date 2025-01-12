@@ -70,6 +70,7 @@ async def async_setup_platform(
         [
             Thermostat(coordinator, client, thermostat)
             for thermostat in coordinator.data.values()
+            if isinstance(thermostat, ContromeThermostat)
         ]
     )
 
