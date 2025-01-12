@@ -213,7 +213,11 @@ class ContromeClient:
                                     floor=floor,
                                     room=raum["name"],
                                 )
-                                cs.state = round(sensor["wert"], 1)
+                                cs.state = (
+                                    0.0
+                                    if sensor["wert"] is None
+                                    else round(sensor["wert"], 1)
+                                )
                                 cs = sensor["letzte_uebertragung"]
                                 thermostat.last_updated = sensor["letzte_uebertragung"]
                                 entities.append(cs)
@@ -224,7 +228,11 @@ class ContromeClient:
                                     floor=floor,
                                     room=raum["name"],
                                 )
-                                s.state = round(sensor["wert"], 1)
+                                s.state = (
+                                    0.0
+                                    if sensor["wert"] is None
+                                    else round(sensor["wert"], 1)
+                                )
                                 s.last_updated = sensor["letzte_uebertragung"]
                                 entities.append(s)
 
