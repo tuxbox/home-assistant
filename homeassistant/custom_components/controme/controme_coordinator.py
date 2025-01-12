@@ -61,7 +61,18 @@ class ContromeCoordinator(DataUpdateCoordinator):
         coordinator.async_config_entry_first_refresh.
         """
         _LOGGER.info("Async initial setup of the coordinator")
-        self._entities = await self._client.get_entities()
+        self._entities = [
+            entity
+            for entity in await self._client.get_entities()
+            if (
+                isinstance(entity, ContromeThermostat)
+                and self._entity_type == ContromeEntityType.THERMOSTAT
+            )
+            or (
+                isinstance(entity, ContromeSensor)
+                and self._entity_type == ContromeEntityType.SENSOR
+            )
+        ]
 
     async def _async_update_data(self) -> dict[str, ContromeSensor]:
         """Fetch the latest data from the controme api."""
